@@ -75,7 +75,7 @@ def main():
     # Configurações da página
     st.sidebar.header("Configurações")
     refresh_rate = st.sidebar.selectbox("Atualização automática:", 
-                                      [60, 300, 600], 
+                                      [5, 15, 30, 60], 
                                       index=0,
                                       help="Intervalo de atualização em segundos")
     
