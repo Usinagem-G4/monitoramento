@@ -8,68 +8,68 @@ from zoneinfo import ZoneInfo
 import time
 import os
 
+
 def calcular_tempo(arquivo_excel):
-    def calcular_tempo(arquivo_excel):
-    """Calcula o tempo restante e excedente na planilha."""
-    
-    def formatar_tempo(delta):
-        total_segundos = int(delta.total_seconds())
-        horas, resto = divmod(total_segundos, 3600)
-        minutos, segundos = divmod(resto, 60)
-        return f"{horas:02d}:{minutos:02d}:{segundos:02d}"
-    
-    try:
-        df = pd.read_excel(arquivo_excel)
-    except FileNotFoundError:
-        df = pd.DataFrame(columns=['Item', 'Operador', 'Termino', 'Tempo restante', 'Tempo excedente'])
-        df.to_excel(arquivo_excel, index=False)
-        st.warning(f"Arquivo {arquivo_excel} criado com colunas padrão.")
+"""Calcula o tempo restante e excedente na planilha."""
 
-    if 'Tempo restante' not in df.columns:
-        df['Tempo restante'] = ''
-    if 'Tempo excedente' not in df.columns:
-        df['Tempo excedente'] = ''
+def formatar_tempo(delta):
+    total_segundos = int(delta.total_seconds())
+    horas, resto = divmod(total_segundos, 3600)
+    minutos, segundos = divmod(resto, 60)
+    return f"{horas:02d}:{minutos:02d}:{segundos:02d}"
 
-    for index, row in df.iterrows():
-        if pd.notna(row.get('Termino')):
-            termino_str = str(row['Termino'])
-            try:
-                termino = datetime.datetime.strptime(termino_str, '%d/%m/%Y %H:%M:%S')
-            except ValueError:
-                try:
-                    hora = datetime.datetime.strptime(termino_str, '%H:%M:%S').time()
-                    data_atual = datetime.date.today()
-                    termino = datetime.datetime.combine(data_atual, hora)
-                except ValueError:
-                    st.error(f"Formato inválido na linha {index + 2}: {termino_str}")
-                    continue
-
-            agora = datetime.datetime.now(ZoneInfo("America/Sao_Paulo"))
-            termino = termino.replace(tzinfo=ZoneInfo("America/Sao_Paulo"))
-
-            if termino > agora:
-                tempo_restante = termino - agora
-                df.at[index, 'Tempo restante'] = formatar_tempo(tempo_restante)
-                df.at[index, 'Tempo excedente'] = 'Dentro do tempo'
-            else:
-                tempo_excedente = agora - termino
-                df.at[index, 'Tempo restante'] = 'Expirado'
-                df.at[index, 'Tempo excedente'] = formatar_tempo(tempo_excedente)
-        else:
-            df.at[index, 'Tempo restante'] = ''
-            df.at[index, 'Tempo excedente'] = ''
-
+try:
+    df = pd.read_excel(arquivo_excel)
+except FileNotFoundError:
+    df = pd.DataFrame(columns=['Item', 'Operador', 'Termino', 'Tempo restante', 'Tempo excedente'])
     df.to_excel(arquivo_excel, index=False)
-    
-    # Aplicar formatação condicional
-    wb = load_workbook(arquivo_excel)
-    ws = wb.active
-    red_fill = PatternFill(start_color="FF0000", end_color="FF0000", fill_type="solid")
-    rule = CellIsRule(operator="lessThan", formula=['0'], stopIfTrue=True, fill=red_fill)
-    ws.conditional_formatting.add(f"D2:D{len(df) + 1}", rule)
-    wb.save(arquivo_excel)
-    
-    return df
+    st.warning(f"Arquivo {arquivo_excel} criado com colunas padrão.")
+
+if 'Tempo restante' not in df.columns:
+    df['Tempo restante'] = ''
+if 'Tempo excedente' not in df.columns:
+    df['Tempo excedente'] = ''
+
+for index, row in df.iterrows():
+    if pd.notna(row.get('Termino')):
+        termino_str = str(row['Termino'])
+        try:
+            termino = datetime.datetime.strptime(termino_str, '%d/%m/%Y %H:%M:%S')
+        except ValueError:
+            try:
+                hora = datetime.datetime.strptime(termino_str, '%H:%M:%S').time()
+                data_atual = datetime.date.today()
+                termino = datetime.datetime.combine(data_atual, hora)
+            except ValueError:
+                st.error(f"Formato inválido na linha {index + 2}: {termino_str}")
+                continue
+
+        agora = datetime.datetime.now(ZoneInfo("America/Sao_Paulo"))
+        termino = termino.replace(tzinfo=ZoneInfo("America/Sao_Paulo"))
+
+        if termino > agora:
+            tempo_restante = termino - agora
+            df.at[index, 'Tempo restante'] = formatar_tempo(tempo_restante)
+            df.at[index, 'Tempo excedente'] = 'Dentro do tempo'
+        else:
+            tempo_excedente = agora - termino
+            df.at[index, 'Tempo restante'] = 'Expirado'
+            df.at[index, 'Tempo excedente'] = formatar_tempo(tempo_excedente)
+    else:
+        df.at[index, 'Tempo restante'] = ''
+        df.at[index, 'Tempo excedente'] = ''
+
+df.to_excel(arquivo_excel, index=False)
+
+# Aplicar formatação condicional
+wb = load_workbook(arquivo_excel)
+ws = wb.active
+red_fill = PatternFill(start_color="FF0000", end_color="FF0000", fill_type="solid")
+rule = CellIsRule(operator="lessThan", formula=['0'], stopIfTrue=True, fill=red_fill)
+ws.conditional_formatting.add(f"D2:D{len(df) + 1}", rule)
+wb.save(arquivo_excel)
+
+return df
 
 def main():
     st.title("Monitoramento de Tempo em Tempo Real")
