@@ -109,7 +109,7 @@ def main():
     
     if time.time() - st.session_state.last_refresh > refresh_rate:
         st.session_state.last_refresh = time.time()
-        st.experimental_rerun()
+        st.rerun()
 
     # Processamento principal
     try:
