@@ -104,7 +104,7 @@ def main():
     # Configurações
     refresh_rate = st.sidebar.selectbox(
         "Intervalo de atualização:",
-        options=[60, 300, 600],
+        options=[5, 15, 30, 60],
         format_func=lambda x: f"{x//60} minutos" if x >= 60 else f"{x} segundos"
     )
 
