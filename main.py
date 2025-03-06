@@ -6,7 +6,7 @@ from openpyxl.styles import PatternFill
 from openpyxl.formatting.rule import CellIsRule
 from zoneinfo import ZoneInfo
 import time
-from st_autorefresh import st_autorefresh
+
 
 def calcular_tempo(arquivo_excel):
     """Calcula o tempo restante e excedente na planilha."""
