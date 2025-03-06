@@ -7,7 +7,6 @@ from openpyxl.formatting.rule import CellIsRule
 from zoneinfo import ZoneInfo
 import time
 
-
 def calcular_tempo(arquivo_excel):
     """Calcula o tempo restante e excedente na planilha."""
     
@@ -73,25 +72,12 @@ def calcular_tempo(arquivo_excel):
 def main():
     st.title("Monitoramento de Tempo em Tempo Real ⏱️")
     
-    # Configurações de atualização
-    st.sidebar.header("Configurações")
-    refresh_rate = st.sidebar.selectbox(
-        "Intervalo de atualização:",
-        options=[5, 15, 30, 60],
-        format_func=lambda x: f"{x//60} minutos" if x >= 60 else f"{x} segundos",
-        index=0
-    )
-    
-    # Inicializar variáveis de tempo
-    current_time = time.time()
+    # Inicializar estado da sessão
+    if 'monitoring' not in st.session_state:
+        st.session_state.monitoring = False
     if 'last_refresh' not in st.session_state:
-        st.session_state.last_refresh = current_time
+        st.session_state.last_refresh = 0
 
-    # Verificar se precisa atualizar
-    if current_time - st.session_state.last_refresh > refresh_rate:
-        st.session_state.last_refresh = current_time
-        st.rerun()
-    
     # Upload de arquivo
     with st.expander("📤 Carregar Planilha", expanded=True):
         uploaded_file = st.file_uploader(
@@ -104,34 +90,58 @@ def main():
             with open("monitoramento.xlsx", "wb") as f:
                 f.write(uploaded_file.getbuffer())
             st.success("Arquivo carregado com sucesso!")
+            st.session_state.monitoring = False  # Resetar monitoramento
+
+    # Controles de execução
+    st.sidebar.header("Controles")
+    if st.sidebar.button("▶️ Iniciar Monitoramento"):
+        st.session_state.monitoring = True
+        st.session_state.last_refresh = time.time()
+        
+    if st.sidebar.button("⏹️ Parar Monitoramento"):
+        st.session_state.monitoring = False
+
+    # Configurações
+    refresh_rate = st.sidebar.selectbox(
+        "Intervalo de atualização:",
+        options=[60, 300, 600],
+        format_func=lambda x: f"{x//60} minutos" if x >= 60 else f"{x} segundos"
+    )
+
+    # Lógica de atualização
+    if st.session_state.monitoring:
+        current_time = time.time()
+        if current_time - st.session_state.last_refresh > refresh_rate:
+            st.session_state.last_refresh = current_time
             st.rerun()
 
-    # Processamento principal
-    try:
-        df = calcular_tempo("monitoramento.xlsx")
-        
-        # Exibição dos dados
-        st.subheader("📊 Dados Atualizados")
-        st.dataframe(
-            df.style.applymap(
-                lambda x: 'background-color: #ff0000; color: white' if x == 'Expirado' else '',
-                subset=['Tempo restante']
-            ),
-            height=600
-        )
-        
-        # Botão de download
-        with open("monitoramento.xlsx", "rb") as file:
-            st.download_button(
-                label="⏬ Baixar Planilha Atualizada",
-                data=file,
-                file_name="monitoramento_atualizado.xlsx",
-                mime="application/vnd.openxmlformats-officedocument.spreadsheetml.sheet"
+        try:
+            df = calcular_tempo("monitoramento.xlsx")
+            
+            # Exibição dos dados
+            st.subheader("📊 Dados Atualizados")
+            st.dataframe(
+                df.style.applymap(
+                    lambda x: 'background-color: #ff0000; color: white' if x == 'Expirado' else '',
+                    subset=['Tempo restante']
+                ),
+                height=600
             )
             
-    except Exception as e:
-        st.error(f"Erro: {str(e)}")
-        st.info("Verifique se o arquivo possui o formato correto com as colunas: Item, Operador, Termino")
+            # Botão de download
+            with open("monitoramento.xlsx", "rb") as file:
+                st.download_button(
+                    label="⏬ Baixar Planilha Atualizada",
+                    data=file,
+                    file_name="monitoramento_atualizado.xlsx",
+                    mime="application/vnd.openxmlformats-officedocument.spreadsheetml.sheet"
+                )
+                
+        except Exception as e:
+            st.error(f"Erro: {str(e)}")
+            st.info("Verifique se o arquivo possui o formato correto com as colunas: Item, Operador, Termino")
+    else:
+        st.info("⚠️ Carregue um arquivo e clique em 'Iniciar Monitoramento' para começar")
 
 if __name__ == '__main__':
     main()
