@@ -101,7 +101,7 @@ def main():
     # Seção de atualização automática
     st.sidebar.markdown("---")
     if st.sidebar.button("Forçar Atualização"):
-        st.experimental_rerun()
+        st.rerun()
     
     # Atualização automática
     if 'last_refresh' not in st.session_state:
