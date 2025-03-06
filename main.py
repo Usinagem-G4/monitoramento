@@ -77,13 +77,20 @@ def main():
     st.sidebar.header("Configurações")
     refresh_rate = st.sidebar.selectbox(
         "Intervalo de atualização:",
-        options=[("5 segundos", 5), ("15 segundos", 15), ("30 segundos", 30), ("1 minuto", 60)],
-        format_func=lambda x: x[0],
+        options=[60, 300, 600],
+        format_func=lambda x: f"{x//60} minutos" if x >= 60 else f"{x} segundos",
         index=0
-    )[1]
+    )
     
-    # Atualização automática
-    st_autorefresh(interval=refresh_rate * 1000, key="data_refresh")
+    # Inicializar variáveis de tempo
+    current_time = time.time()
+    if 'last_refresh' not in st.session_state:
+        st.session_state.last_refresh = current_time
+
+    # Verificar se precisa atualizar
+    if current_time - st.session_state.last_refresh > refresh_rate:
+        st.session_state.last_refresh = current_time
+        st.rerun()
     
     # Upload de arquivo
     with st.expander("📤 Carregar Planilha", expanded=True):
