@@ -135,7 +135,7 @@ def main():
             st.dataframe(
                 df.style.applymap(
                     lambda x: 'background-color: #ff0000; color: white' if x == 'Expirado' else '',
-                    subset=(['Tempo restante'], ['Operador'])
+                    subset= ['Tempo restante'], ['Operador']
                 ),
                 height=600
             )
