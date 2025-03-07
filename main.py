@@ -144,7 +144,7 @@ def main():
                     if row['Tempo restante'] == 'Expirado'
                     else [''] * len(row),
                     axis=1
-                ),
+                )[['Item', 'Operador', 'Termino', 'Tempo restante', 'Tempo excedente']],
                 height=600
             )
             
