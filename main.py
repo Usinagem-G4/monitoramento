@@ -60,13 +60,15 @@ def calcular_tempo(arquivo_excel):
 
     df.to_excel(arquivo_excel, index=False)
     
-    # Aplicar formatação condicional
-    wb = load_workbook(arquivo_excel)
-    ws = wb.active
+    # Substitua a formatação condicional por:
     red_fill = PatternFill(start_color="FF0000", end_color="FF0000", fill_type="solid")
-    rule = CellIsRule(operator="lessThan", formula=['0'], stopIfTrue=True, fill=red_fill)
-    ws.conditional_formatting.add(f"D2:D{len(df) + 1}", rule)
-    wb.save(arquivo_excel)
+    
+    # Aplicar a todas as colunas da linha
+    for row in range(2, len(df) + 2):
+        ws.conditional_formatting.add(
+            f'A{row}:E{row}',
+            CellIsRule(operator='equal', formula=['"Expirado"'], fill=red_fill)
+        )
     
     return df
 
@@ -137,8 +139,7 @@ def main():
                     lambda row: ['background-color: #ff0000; color: white'] * len(row)
                     if row['Tempo restante'] == 'Expirado'
                     else [''] * len(row),
-                    axis=1,
-                    subset=['Tempo restante']
+                    axis=1
                 ),
                 height=600
             )
