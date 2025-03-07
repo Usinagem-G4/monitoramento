@@ -139,12 +139,12 @@ def main():
             
             st.subheader("📊 Dados Atualizados")
             st.dataframe(
-                df.style.apply(
+                df[['Item', 'Operador', 'Termino', 'Tempo restante', 'Tempo excedente']].style.apply(
                     lambda row: ['background-color: #ff0000; color: white'] * len(row)
                     if row['Tempo restante'] == 'Expirado'
                     else [''] * len(row),
                     axis=1
-                )[['Item', 'Operador', 'Termino', 'Tempo restante', 'Tempo excedente']],
+                ),
                 height=600
             )
             
