@@ -6,6 +6,7 @@ from openpyxl.styles import PatternFill
 from openpyxl.formatting.rule import CellIsRule
 from zoneinfo import ZoneInfo
 import time
+import threading
 
 def calcular_tempo(arquivo_excel):
     """Calcula o tempo restante e excedente na planilha."""
@@ -69,14 +70,24 @@ def calcular_tempo(arquivo_excel):
     
     return df
 
+def monitorar():
+    while st.session_state.monitoring:
+        agora = time.time()
+        if agora - st.session_state.last_refresh > st.session_state.refresh_rate:
+            st.session_state.last_refresh = agora
+            st.rerun()
+        time.sleep(1)
+
 def main():
     st.title("Monitoramento de Tempo em Tempo Real ⏱️")
     
-    # Inicializar estado da sessão
+    # Inicializar estados
     if 'monitoring' not in st.session_state:
         st.session_state.monitoring = False
     if 'last_refresh' not in st.session_state:
-        st.session_state.last_refresh = 0
+        st.session_state.last_refresh = time.time()
+    if 'refresh_rate' not in st.session_state:
+        st.session_state.refresh_rate = 60
 
     # Upload de arquivo
     with st.expander("📤 Carregar Planilha", expanded=True):
@@ -90,35 +101,36 @@ def main():
             with open("monitoramento.xlsx", "wb") as f:
                 f.write(uploaded_file.getbuffer())
             st.success("Arquivo carregado com sucesso!")
-            st.session_state.monitoring = False  # Resetar monitoramento
+            st.session_state.monitoring = False
 
-    # Controles de execução
+    # Controles na sidebar
     st.sidebar.header("Controles")
-    if st.sidebar.button("▶️ Iniciar Monitoramento"):
-        st.session_state.monitoring = True
-        st.session_state.last_refresh = time.time()
-        
-    if st.sidebar.button("⏹️ Parar Monitoramento"):
-        st.session_state.monitoring = False
+    col1, col2 = st.sidebar.columns(2)
+    
+    with col1:
+        if st.button("▶️ Iniciar"):
+            if not st.session_state.monitoring:
+                st.session_state.monitoring = True
+                st.session_state.last_refresh = time.time()
+                threading.Thread(target=monitorar, daemon=True).start()
+    
+    with col2:
+        if st.button("⏹️ Parar"):
+            st.session_state.monitoring = False
 
-    # Configurações
-    refresh_rate = st.sidebar.selectbox(
+    # Seletor de intervalo
+    st.session_state.refresh_rate = st.sidebar.selectbox(
         "Intervalo de atualização:",
-        options=[5, 15, 30, 60],
-        format_func=lambda x: f"{x//60} minutos" if x >= 60 else f"{x} segundos"
+        options=[60, 300, 600],
+        format_func=lambda x: f"{x//60} minutos" if x >= 60 else f"{x} segundos",
+        index=0
     )
 
-    # Lógica de atualização
-    if st.session_state.monitoring:
-        current_time = time.time()
-        if current_time - st.session_state.last_refresh > refresh_rate:
-            st.session_state.last_refresh = current_time
-            st.rerun()
-
+    # Exibição dos dados
+    if st.session_state.monitoring or uploaded_file is not None:
         try:
             df = calcular_tempo("monitoramento.xlsx")
             
-            # Exibição dos dados
             st.subheader("📊 Dados Atualizados")
             st.dataframe(
                 df.style.applymap(
@@ -128,7 +140,6 @@ def main():
                 height=600
             )
             
-            # Botão de download
             with open("monitoramento.xlsx", "rb") as file:
                 st.download_button(
                     label="⏬ Baixar Planilha Atualizada",
@@ -139,9 +150,8 @@ def main():
                 
         except Exception as e:
             st.error(f"Erro: {str(e)}")
-            st.info("Verifique se o arquivo possui o formato correto com as colunas: Item, Operador, Termino")
     else:
-        st.info("⚠️ Carregue um arquivo e clique em 'Iniciar Monitoramento' para começar")
+        st.info("⚠️ Carregue um arquivo e clique em 'Iniciar' para começar o monitoramento")
 
 if __name__ == '__main__':
     main()
