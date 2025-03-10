@@ -1,5 +1,5 @@
 # fly.toml
-app = "SEU_APP_NAME"
+app = "monitoramento"
 primary_region = "gru"  # São Paulo
 
 [build]
